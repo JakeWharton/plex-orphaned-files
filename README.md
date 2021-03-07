@@ -79,7 +79,7 @@ not indexed by Plex will be output, and the command will have an exit code of 1.
 
 ```
 $ plex-orphaned-files --base-url http://plexms:32400/ --token MY_TOKEN
-/media/photos/Area_51/blueprints.png
+Photos: /media/photos/Area_51/blueprints.png
 ```
 
 
