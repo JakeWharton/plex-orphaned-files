@@ -1,0 +1,52 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		gradlePluginPortal()
+	}
+	dependencies {
+		classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.31'
+		classpath 'org.jetbrains.kotlin:kotlin-serialization:1.4.31'
+	}
+}
+
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+
+apply plugin: 'application'
+mainClassName = 'com.jakewharton.plex.OrphanedFiles'
+
+dependencies {
+	implementation 'com.github.ajalt.clikt:clikt:3.0.1'
+
+	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3'
+
+	def okhttpVersion = '4.9.1'
+	implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
+	implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
+
+	def kotlinxSerializationVersion = '1.1.0'
+	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
+	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+}
+
+repositories {
+	mavenCentral()
+}
+
+tasks.named("distTar").configure { task ->
+	task.enabled = false
+}
+tasks.named("assemble").configure { task ->
+	task.dependsOn(tasks.getByName("installDist"))
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile).configureEach { task ->
+	task.kotlinOptions {
+		jvmTarget = '1.8'
+		freeCompilerArgs += [
+				'-progressive',
+				'-Xopt-in=kotlin.ExperimentalStdlibApi',
+				'-Xopt-in=kotlin.io.path.ExperimentalPathApi',
+		]
+	}
+}
