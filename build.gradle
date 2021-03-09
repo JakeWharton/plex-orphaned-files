@@ -13,7 +13,7 @@ apply plugin: 'org.jetbrains.kotlin.jvm'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 apply plugin: 'application'
-mainClassName = 'com.jakewharton.plex.OrphanedFiles'
+mainClassName = 'com.jakewharton.plex.Main'
 
 dependencies {
 	implementation 'com.github.ajalt.clikt:clikt:3.0.1'

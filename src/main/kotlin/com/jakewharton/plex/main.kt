@@ -1,4 +1,4 @@
-@file:JvmName("OrphanedFiles")
+@file:JvmName("Main")
 
 package com.jakewharton.plex
 
@@ -9,7 +9,6 @@ import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -17,10 +16,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.io.path.isDirectory
-import kotlin.streams.toList
 import kotlin.system.exitProcess
 
 private class OrphanedFilesCommand(
@@ -53,20 +48,11 @@ private class OrphanedFilesCommand(
 			require(to.isNotBlank()) {
 				"Folder mapping 'to' must not be blank: \"$to\""
 			}
-			from to to
+			FolderMapping(from, to)
 		}
 		.multiple()
 
 	private val debug by option(hidden = true).flag()
-
-	private fun String.withFolderMapping(): String {
-		for ((from, to) in folderMappings) {
-			if (startsWith(from)) {
-				return to + substring(from.length)
-			}
-		}
-		return this
-	}
 
 	override fun run() {
 		val httpLogger = HttpLoggingInterceptor(::println)
@@ -78,40 +64,19 @@ private class OrphanedFilesCommand(
 		}
 
 		val plexApi = HttpPlexApi(client, baseUrl, token)
+		val orphanedFiles = OrphanedFiles(plexApi, fs, folderMappings)
 
-		var hasOrphans = false
-
-		runBlocking {
-			coroutineContext.job.invokeOnCompletion {
-				client.dispatcher.executorService.shutdown()
-				client.connectionPool.evictAll()
-			}
-
-			for (section in plexApi.sections()) {
-				val locations = section.locations
-					.map { it.withFolderMapping() }
-					.map(fs::getPath)
-					.flatMap { path ->
-						Files.walk(path).filter { !it.isDirectory() }
-							.map(Path::toString)
-							.toList()
-					}
-					.toSet()
-
-				val paths = plexApi.sectionPaths(section.key)
-					.map { it.withFolderMapping() }
-
-				val orphaned = locations - paths
-				if (orphaned.isNotEmpty()) {
-					hasOrphans = true
-				}
-				orphaned.forEach {
-					println("${section.title}: $it")
-				}
-			}
+		val orphans = try {
+			runBlocking { orphanedFiles.find() }
+		} finally {
+			client.dispatcher.executorService.shutdown()
+			client.connectionPool.evictAll()
 		}
 
-		if (hasOrphans) {
+		if (orphans.isNotEmpty()) {
+			orphans.forEach {
+				println("${it.section.title}: ${it.path}")
+			}
 			exitProcess(1)
 		}
 	}
