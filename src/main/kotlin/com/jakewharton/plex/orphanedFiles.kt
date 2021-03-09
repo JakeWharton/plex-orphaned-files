@@ -26,7 +26,8 @@ class OrphanedFiles(
 				.map { it.withFolderMapping() }
 				.map(fileSystem::getPath)
 				.flatMap { path ->
-					Files.walk(path).filter { !it.isDirectory() }
+					Files.walk(path)
+						.filter { !it.isDirectory() }
 						.map(Path::toString)
 						.toList()
 				}
@@ -37,14 +38,14 @@ class OrphanedFiles(
 
 			val orphaned = locations - paths
 			addAll(orphaned.map {
-				OrphanedFile(section, it)
+				OrphanedFile(section.title, it)
 			})
 		}
 	}
 }
 
 data class OrphanedFile(
-	val section: PlexSection,
+	val section: String,
 	val path: String,
 )
 

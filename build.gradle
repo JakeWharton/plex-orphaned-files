@@ -27,6 +27,10 @@ dependencies {
 	def kotlinxSerializationVersion = '1.1.0'
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+
+	testImplementation 'junit:junit:4.13.2'
+	testImplementation 'com.google.jimfs:jimfs:1.2'
+	testImplementation 'com.google.truth:truth:1.1.2'
 }
 
 repositories {
