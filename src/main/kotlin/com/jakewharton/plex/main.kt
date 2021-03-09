@@ -75,7 +75,7 @@ private class OrphanedFilesCommand(
 
 		if (orphans.isNotEmpty()) {
 			orphans.forEach {
-				println("${it.section.title}: ${it.path}")
+				println("${it.section}: ${it.path}")
 			}
 			exitProcess(1)
 		}
