@@ -11,10 +11,8 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
 import java.nio.file.FileSystem
@@ -61,15 +59,6 @@ private class OrphanedFilesCommand(
 
 	private val debug by option(hidden = true).flag()
 
-	private val httpLogger = HttpLoggingInterceptor(::println)
-	private val client = OkHttpClient.Builder()
-		.addNetworkInterceptor(httpLogger)
-		.build()
-
-	private val json = Json {
-		ignoreUnknownKeys = true
-	}
-
 	private fun String.withFolderMapping(): String {
 		for ((from, to) in folderMappings) {
 			if (startsWith(from)) {
@@ -80,11 +69,17 @@ private class OrphanedFilesCommand(
 	}
 
 	override fun run() {
-		var hasOrphans = false
-
+		val httpLogger = HttpLoggingInterceptor(::println)
+		val client = OkHttpClient.Builder()
+			.addNetworkInterceptor(httpLogger)
+			.build()
 		if (debug) {
 			httpLogger.level = BASIC
 		}
+
+		val plexApi = HttpPlexApi(client, baseUrl, token)
+
+		var hasOrphans = false
 
 		runBlocking {
 			coroutineContext.job.invokeOnCompletion {
@@ -92,20 +87,9 @@ private class OrphanedFilesCommand(
 				client.connectionPool.evictAll()
 			}
 
-			val sectionsUrl = baseUrl.newBuilder()
-				.addPathSegment("library")
-				.addPathSegment("sections")
-				.addQueryParameter("X-Plex-Token", token)
-				.build()
-			val sectionsRequest = Request.Builder()
-				.url(sectionsUrl)
-				.header("Accept", "application/json")
-				.build()
-			val sectionsJson = client.newCall(sectionsRequest).awaitString()
-			val sections = json.decodeFromString(PlexResponse.serializer(PlexSections.serializer()), sectionsJson)
-
-			for (sectionHeader in sections.mediaContainer.sections) {
-				val locations = sectionHeader.locations.map { it.path.withFolderMapping() }
+			for (section in plexApi.sections()) {
+				val locations = section.locations
+					.map { it.withFolderMapping() }
 					.map(fs::getPath)
 					.flatMap { path ->
 						Files.walk(path).filter { !it.isDirectory() }
@@ -114,19 +98,7 @@ private class OrphanedFilesCommand(
 					}
 					.toSet()
 
-				val sectionUrl = sectionsUrl.newBuilder()
-					.addPathSegment(sectionHeader.key)
-					.addPathSegment("all")
-					.build()
-				val sectionRequest = Request.Builder()
-					.url(sectionUrl)
-					.header("Accept", "application/json")
-					.build()
-				val sectionJson = client.newCall(sectionRequest).awaitString()
-				val section = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), sectionJson)
-
-				val paths = section.mediaContainer.metadata
-					.flatMap { paths(it) }
+				val paths = plexApi.sectionPaths(section.key)
 					.map { it.withFolderMapping() }
 
 				val orphaned = locations - paths
@@ -134,7 +106,7 @@ private class OrphanedFilesCommand(
 					hasOrphans = true
 				}
 				orphaned.forEach {
-					println("${sectionHeader.title}: $it")
+					println("${section.title}: $it")
 				}
 			}
 		}
@@ -142,26 +114,6 @@ private class OrphanedFilesCommand(
 		if (hasOrphans) {
 			exitProcess(1)
 		}
-	}
-
-	private suspend fun paths(metadata: PlexMetadata): List<String> {
-		if (metadata.media != null) {
-			return metadata.media
-				.flatMap { it.parts }
-				.map { it.file }
-		}
-
-		val metadataUrl = baseUrl.newBuilder(metadata.key)!!
-			.addQueryParameter("X-Plex-Token", token)
-			.build()
-		val metadataRequest = Request.Builder()
-			.url(metadataUrl)
-			.header("Accept", "application/json")
-			.build()
-		val metadataJson = client.newCall(metadataRequest).awaitString()
-		val metadataList = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), metadataJson)
-
-		return metadataList.mediaContainer.metadata.flatMap { paths(it) }
 	}
 }
 
