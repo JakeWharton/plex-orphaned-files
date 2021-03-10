@@ -39,7 +39,7 @@ private class OrphanedFilesCommand(
 		.required()
 
 	private val folderMappings by option("--folder-mapping", metavar = "MAPPING")
-		.help("Map a plex folder path to a local filesystem path (e.g., /media:/tank/media)")
+		.help("Map a Plex folder path to filesystem path (e.g., /media:/tank/media)")
 		.convert {
 			val partition = it.indexOf(':')
 			require(partition != -1) {
@@ -57,15 +57,26 @@ private class OrphanedFilesCommand(
 		}
 		.multiple()
 
-	private val excludes by option("--exclude", "-e", metavar = "GLOB")
-		.help("Glob pattern of files ignore (e.g., /media/**/*.nfo, /music/**/cover.*)")
+	private val fileExcludes by option("--exclude-files", metavar = "GLOB")
+		.help("Glob pattern of files to ignore (e.g., /media/**/*.nfo, /music/**/cover.*)")
 		.convert {
 			fs.getPathMatcher("glob:$it")!!
 		}
 		.multiple()
 
+	private val libraryExcludes by option("--exclude-library", metavar = "NAME")
+		.help("""
+			|Name of libraries to exclude.
+			|Mutually exclusive with LIBRARY arguments.
+			""".trimMargin())
+		.multiple()
+
 	private val libraries by argument(name = "LIBRARY")
-		.help("Name of libraries to scan. All libraries will be scanned if none specified")
+		.help("""
+			|Name of libraries to scan.
+			|All libraries will be scanned if none specified.
+			|Mutually exclusive with --exclude-library
+			""".trimMargin())
 		.multiple()
 
 	private val debug by option(hidden = true).counted()
@@ -87,8 +98,9 @@ private class OrphanedFilesCommand(
 		val orphanedFiles = OrphanedFiles(
 			plexApi = plexApi,
 			libraries = libraries.toSet(),
+			libraryExcludes = libraryExcludes.toSet(),
 			fileSystem = fs,
-			excludes = excludes,
+			fileExcludes = fileExcludes,
 			folderMappings = folderMappings,
 			debug = debug > 0,
 		)

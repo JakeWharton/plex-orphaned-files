@@ -5,6 +5,24 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class OrphanedFilesTest {
+	@Test fun libraryAndLibraryExcludesAreMutuallyExclusive() {
+		val plex = fakePlex { }
+		val fs = fakeFs { }
+
+		OrphanedFiles(plexApi = plex, fileSystem = fs)
+		OrphanedFiles(plexApi = plex, fileSystem = fs, libraries = setOf("Stuff"))
+		OrphanedFiles(plexApi = plex, fileSystem = fs, libraryExcludes = setOf("Things"))
+
+		assertThrows<IllegalArgumentException> {
+			OrphanedFiles(plexApi = plex,
+				fileSystem = fs,
+				libraries = setOf("Stuff"),
+				libraryExcludes = setOf("Things"),
+			)
+		}.hasMessageThat()
+			.isEqualTo("Libraries and library excludes are mutually exclusive. Specify neither or one, not both.")
+	}
+
 	@Test fun emptySection() = runBlocking<Unit> {
 		val plex = fakePlex {
 			section("Stuff") {
@@ -137,6 +155,39 @@ class OrphanedFilesTest {
 		assertThat(orphans).isEmpty()
 	}
 
+	@Test fun unindexedFileIgnoredInExcludedLibrary() = runBlocking<Unit> {
+		val plex = fakePlex {
+			section("Stuff") {
+				location("/stuff") {
+					file("Movie_1.mkv")
+				}
+			}
+			section("Things") {
+				location("/things") {
+					file("Movie_1.mkv")
+				}
+			}
+		}
+
+		val fs = fakeFs {
+			dir("stuff") {
+				file("Movie_1.mkv")
+			}
+			dir("things") {
+				file("Movie_1.mkv")
+				file("Movie_2.mkv")
+			}
+		}
+
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+			libraryExcludes = setOf("Things"),
+		)
+		val orphans = orphanedFiles.find()
+		assertThat(orphans).isEmpty()
+	}
+
 	@Test fun unindexedFileExcludedIsIgnored() = runBlocking<Unit> {
 		val plex = fakePlex {
 			section("Stuff") {
@@ -160,7 +211,7 @@ class OrphanedFilesTest {
 		val orphanedFiles = OrphanedFiles(
 			plexApi = plex,
 			fileSystem = fs,
-			excludes = excludes,
+			fileExcludes = excludes,
 		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).isEmpty()

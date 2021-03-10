@@ -11,10 +11,17 @@ class OrphanedFiles(
 	private val debug: Boolean = false,
 	private val plexApi: PlexApi,
 	private val libraries: Set<String> = emptySet(),
+	private val libraryExcludes: Set<String> = emptySet(),
 	private val fileSystem: FileSystem,
-	private val excludes: List<PathMatcher> = emptyList(),
+	private val fileExcludes: List<PathMatcher> = emptyList(),
 	private val folderMappings: List<FolderMapping> = emptyList(),
 ) {
+	init {
+		require(libraries.isEmpty() or libraryExcludes.isEmpty()) {
+			"Libraries and library excludes are mutually exclusive. Specify neither or one, not both."
+		}
+	}
+
 	private fun String.withFolderMapping(): String {
 		for ((from, to) in folderMappings) {
 			if (startsWith(from)) {
@@ -26,7 +33,7 @@ class OrphanedFiles(
 
 	suspend fun find() = buildList {
 		for (section in plexApi.sections()) {
-			if (libraries.isNotEmpty() && section.title !in libraries) {
+			if (libraries.isNotEmpty() && section.title !in libraries || section.title in libraryExcludes) {
 				if (debug) {
 					println("Skipping ${section.title}...")
 				}
@@ -42,7 +49,7 @@ class OrphanedFiles(
 				.flatMap { path ->
 					Files.walk(path)
 						.filter { !it.isDirectory() }
-						.filter { file -> excludes.none { it.matches(file) } }
+						.filter { file -> fileExcludes.none { it.matches(file) } }
 						.map(Path::toString)
 						.toList()
 				}
