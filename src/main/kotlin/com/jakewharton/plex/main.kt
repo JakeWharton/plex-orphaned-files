@@ -54,6 +54,13 @@ private class OrphanedFilesCommand(
 		}
 		.multiple()
 
+	private val excludes by option("--exclude", "-e", metavar = "GLOB")
+		.help("Glob pattern of files ignore (e.g., /media/**/*.nfo, /music/**/cover.*)")
+		.convert {
+			fs.getPathMatcher("glob:$it")!!
+		}
+		.multiple()
+
 	private val debug by option(hidden = true).counted()
 
 	override fun run() {
@@ -70,7 +77,7 @@ private class OrphanedFilesCommand(
 			.build()
 
 		val plexApi = HttpPlexApi(client, baseUrl, token)
-		val orphanedFiles = OrphanedFiles(plexApi, fs, folderMappings, debug > 0)
+		val orphanedFiles = OrphanedFiles(plexApi, fs, excludes, folderMappings, debug > 0)
 
 		val orphans = try {
 			runBlocking { orphanedFiles.find() }

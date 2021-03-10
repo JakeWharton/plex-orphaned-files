@@ -69,6 +69,54 @@ class OrphanedFilesTest {
 		assertThat(orphans).isEmpty()
 	}
 
+	@Test fun unindexedFileReported() = runBlocking<Unit> {
+		val plex = fakePlex {
+			section("Stuff") {
+				location("/media") {
+					file("Movie_1.mkv")
+				}
+			}
+		}
+
+		val fs = fakeFs {
+			dir("media") {
+				file("Movie_1.mkv")
+				file("Movie_2.mkv")
+			}
+		}
+
+		val orphanedFiles = OrphanedFiles(plex, fs)
+		val orphans = orphanedFiles.find()
+		assertThat(orphans).containsExactly(
+			OrphanedFile("Stuff", "/media/Movie_2.mkv")
+		)
+	}
+
+	@Test fun unindexedFileExcludedIsIgnored() = runBlocking<Unit> {
+		val plex = fakePlex {
+			section("Stuff") {
+				location("/media") {
+					file("Movie_1.mkv")
+				}
+			}
+		}
+
+		val fs = fakeFs {
+			dir("media") {
+				file("Movie_1.mkv")
+				file("Movie_1.nfo")
+			}
+		}
+
+		val excludes = listOf(
+			fs.getPathMatcher("glob:/media/*.nfo")
+		)
+
+		val orphanedFiles = OrphanedFiles(plex, fs, excludes)
+		val orphans = orphanedFiles.find()
+		assertThat(orphans).isEmpty()
+	}
+
 	@Test fun folderMappingWorks() = runBlocking<Unit> {
 		val plex = fakePlex {
 			section("Stuff") {
@@ -91,7 +139,7 @@ class OrphanedFilesTest {
 			FolderMapping("/media", "/tank/media")
 		)
 
-		val orphanedFiles = OrphanedFiles(plex, fs, folderMappings)
+		val orphanedFiles = OrphanedFiles(plex, fs, folderMappings = folderMappings)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).containsExactly(
 			OrphanedFile("Stuff", "/tank/media/Movie_2.mkv")
