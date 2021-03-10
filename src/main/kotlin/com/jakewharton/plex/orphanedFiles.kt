@@ -10,6 +10,7 @@ class OrphanedFiles(
 	private val plexApi: PlexApi,
 	private val fileSystem: FileSystem,
 	private val folderMappings: List<FolderMapping> = emptyList(),
+	private val debug: Boolean = false,
 ) {
 	private fun String.withFolderMapping(): String {
 		for ((from, to) in folderMappings) {
@@ -22,6 +23,10 @@ class OrphanedFiles(
 
 	suspend fun find() = buildList {
 		for (section in plexApi.sections()) {
+			if (debug) {
+				println("Checking ${section.title}...")
+			}
+
 			val locations = section.locations
 				.map { it.withFolderMapping() }
 				.map(fileSystem::getPath)
@@ -37,6 +42,9 @@ class OrphanedFiles(
 				.map { it.withFolderMapping() }
 
 			val orphaned = locations - paths
+			if (debug) {
+				println("Found ${orphaned.size} orphan(s)")
+			}
 			addAll(orphaned.map {
 				OrphanedFile(section.title, it)
 			})

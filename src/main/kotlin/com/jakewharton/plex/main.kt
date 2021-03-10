@@ -4,7 +4,7 @@ package com.jakewharton.plex
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.convert
-import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.counted
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
@@ -14,6 +14,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
+import okhttp3.logging.HttpLoggingInterceptor.Level.BODY
+import okhttp3.logging.HttpLoggingInterceptor.Level.NONE
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import kotlin.system.exitProcess
@@ -52,19 +54,23 @@ private class OrphanedFilesCommand(
 		}
 		.multiple()
 
-	private val debug by option(hidden = true).flag()
+	private val debug by option(hidden = true).counted()
 
 	override fun run() {
 		val httpLogger = HttpLoggingInterceptor(::println)
+			.apply {
+				level = when (debug) {
+					0, 1 -> NONE
+					2 -> BASIC
+					else -> BODY
+				}
+			}
 		val client = OkHttpClient.Builder()
 			.addNetworkInterceptor(httpLogger)
 			.build()
-		if (debug) {
-			httpLogger.level = BASIC
-		}
 
 		val plexApi = HttpPlexApi(client, baseUrl, token)
-		val orphanedFiles = OrphanedFiles(plexApi, fs, folderMappings)
+		val orphanedFiles = OrphanedFiles(plexApi, fs, folderMappings, debug > 0)
 
 		val orphans = try {
 			runBlocking { orphanedFiles.find() }
