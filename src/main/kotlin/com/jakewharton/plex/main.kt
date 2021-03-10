@@ -3,6 +3,9 @@
 package com.jakewharton.plex
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.help
+import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.counted
 import com.github.ajalt.clikt.parameters.options.help
@@ -61,6 +64,10 @@ private class OrphanedFilesCommand(
 		}
 		.multiple()
 
+	private val libraries by argument(name = "LIBRARY")
+		.help("Name of libraries to scan. All libraries will be scanned if none specified")
+		.multiple()
+
 	private val debug by option(hidden = true).counted()
 
 	override fun run() {
@@ -77,7 +84,14 @@ private class OrphanedFilesCommand(
 			.build()
 
 		val plexApi = HttpPlexApi(client, baseUrl, token)
-		val orphanedFiles = OrphanedFiles(plexApi, fs, excludes, folderMappings, debug > 0)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plexApi,
+			libraries = libraries.toSet(),
+			fileSystem = fs,
+			excludes = excludes,
+			folderMappings = folderMappings,
+			debug = debug > 0,
+		)
 
 		val orphans = try {
 			runBlocking { orphanedFiles.find() }

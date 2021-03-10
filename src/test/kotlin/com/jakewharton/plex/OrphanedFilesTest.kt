@@ -16,7 +16,10 @@ class OrphanedFilesTest {
 			dir("media")
 		}
 
-		val orphanedFiles = OrphanedFiles(plex, fs)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).isEmpty()
 	}
@@ -36,7 +39,10 @@ class OrphanedFilesTest {
 			}
 		}
 
-		val orphanedFiles = OrphanedFiles(plex, fs)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).isEmpty()
 	}
@@ -64,7 +70,10 @@ class OrphanedFilesTest {
 			}
 		}
 
-		val orphanedFiles = OrphanedFiles(plex, fs)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).isEmpty()
 	}
@@ -85,11 +94,47 @@ class OrphanedFilesTest {
 			}
 		}
 
-		val orphanedFiles = OrphanedFiles(plex, fs)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).containsExactly(
 			OrphanedFile("Stuff", "/media/Movie_2.mkv")
 		)
+	}
+
+	@Test fun unindexedFileIgnoredInUnspecifiedLibrary() = runBlocking<Unit> {
+		val plex = fakePlex {
+			section("Stuff") {
+				location("/stuff") {
+					file("Movie_1.mkv")
+				}
+			}
+			section("Things") {
+				location("/things") {
+					file("Movie_1.mkv")
+				}
+			}
+		}
+
+		val fs = fakeFs {
+			dir("stuff") {
+				file("Movie_1.mkv")
+			}
+			dir("things") {
+				file("Movie_1.mkv")
+				file("Movie_2.mkv")
+			}
+		}
+
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+			libraries = setOf("Stuff"),
+		)
+		val orphans = orphanedFiles.find()
+		assertThat(orphans).isEmpty()
 	}
 
 	@Test fun unindexedFileExcludedIsIgnored() = runBlocking<Unit> {
@@ -112,7 +157,11 @@ class OrphanedFilesTest {
 			fs.getPathMatcher("glob:/media/*.nfo")
 		)
 
-		val orphanedFiles = OrphanedFiles(plex, fs, excludes)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+			excludes = excludes,
+		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).isEmpty()
 	}
@@ -139,7 +188,11 @@ class OrphanedFilesTest {
 			FolderMapping("/media", "/tank/media")
 		)
 
-		val orphanedFiles = OrphanedFiles(plex, fs, folderMappings = folderMappings)
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fs,
+			folderMappings = folderMappings,
+		)
 		val orphans = orphanedFiles.find()
 		assertThat(orphans).containsExactly(
 			OrphanedFile("Stuff", "/tank/media/Movie_2.mkv")

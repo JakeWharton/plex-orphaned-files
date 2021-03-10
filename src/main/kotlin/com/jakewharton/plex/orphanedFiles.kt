@@ -8,11 +8,12 @@ import kotlin.io.path.isDirectory
 import kotlin.streams.toList
 
 class OrphanedFiles(
+	private val debug: Boolean = false,
 	private val plexApi: PlexApi,
+	private val libraries: Set<String> = emptySet(),
 	private val fileSystem: FileSystem,
 	private val excludes: List<PathMatcher> = emptyList(),
 	private val folderMappings: List<FolderMapping> = emptyList(),
-	private val debug: Boolean = false,
 ) {
 	private fun String.withFolderMapping(): String {
 		for ((from, to) in folderMappings) {
@@ -25,6 +26,12 @@ class OrphanedFiles(
 
 	suspend fun find() = buildList {
 		for (section in plexApi.sections()) {
+			if (libraries.isNotEmpty() && section.title !in libraries) {
+				if (debug) {
+					println("Skipping ${section.title}...")
+				}
+				continue
+			}
 			if (debug) {
 				println("Checking ${section.title}...")
 			}
