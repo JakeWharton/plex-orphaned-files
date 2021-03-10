@@ -3,12 +3,14 @@ package com.jakewharton.plex
 import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.PathMatcher
 import kotlin.io.path.isDirectory
 import kotlin.streams.toList
 
 class OrphanedFiles(
 	private val plexApi: PlexApi,
 	private val fileSystem: FileSystem,
+	private val excludes: List<PathMatcher> = emptyList(),
 	private val folderMappings: List<FolderMapping> = emptyList(),
 	private val debug: Boolean = false,
 ) {
@@ -33,6 +35,7 @@ class OrphanedFiles(
 				.flatMap { path ->
 					Files.walk(path)
 						.filter { !it.isDirectory() }
+						.filter { file -> excludes.none { it.matches(file) } }
 						.map(Path::toString)
 						.toList()
 				}
