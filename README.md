@@ -57,7 +57,7 @@ See [command-line usage](#command-line) for how to run the binary.
 ### Command-Line
 
 ```
-Usage: plex-orphaned-files [OPTIONS]
+Usage: plex-orphaned-files [OPTIONS] [LIBRARY]...
 
   Find files in your Plex libraries which are not indexed by Plex.
 
@@ -66,9 +66,17 @@ Options:
                             http://plex:32400/)
   --token TOKEN             Plex authentication token. See:
                             https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
-  --folder-mapping MAPPING  Map a plex folder path to a local filesystem path
-                            (e.g., /media:/tank/media)
+  --folder-mapping MAPPING  Map a Plex folder path to filesystem path (e.g.,
+                            /media:/tank/media)
+  --exclude-files GLOB      Glob pattern of files to ignore (e.g.,
+                            /media/**/*.nfo, /music/**/cover.*)
+  --exclude-library NAME    Name of libraries to exclude. Mutually exclusive
+                            with LIBRARY arguments.
   -h, --help                Show this message and exit
+
+Arguments:
+  LIBRARY  Name of libraries to scan. All libraries will be scanned if none
+           specified. Mutually exclusive with --exclude-library
 ```
 
 The `--base-url` and `--token` arguments are required.
