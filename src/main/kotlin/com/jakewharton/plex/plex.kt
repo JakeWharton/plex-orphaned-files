@@ -113,7 +113,7 @@ private data class PlexSections(
 @Serializable
 private data class PlexMetadataList(
 	@SerialName("Metadata")
-	val metadata: List<PlexMetadata>,
+	val metadata: List<PlexMetadata> = emptyList(), // Will be absent from JSON if no content.
 )
 
 @Serializable
