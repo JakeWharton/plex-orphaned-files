@@ -3,6 +3,13 @@
 ## [Unreleased]
 
 
+## [1.1.1] - 2021-03-12
+
+### Fixed
+
+* Do not crash on empty libraries.
+
+
 ## [1.1.0] - 2021-03-10
 
 ### Added
@@ -21,6 +28,7 @@
  - Initial release
 
 
-[Unreleased]: https://github.com/JakeWharton/plex-orphaned-files/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/JakeWharton/plex-orphaned-files/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/JakeWharton/plex-orphaned-files/releases/tag/1.1.1
 [1.1.0]: https://github.com/JakeWharton/plex-orphaned-files/releases/tag/1.1.0
 [1.0.0]: https://github.com/JakeWharton/plex-orphaned-files/releases/tag/1.0.0
