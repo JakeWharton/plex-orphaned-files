@@ -11,7 +11,7 @@ COPY src ./src
 RUN ./gradlew build
 
 
-FROM alpine:3.13
+FROM alpine:3.22
 LABEL maintainer="Jake Wharton <docker@jakewharton.com>"
 
 RUN apk add --no-cache \
