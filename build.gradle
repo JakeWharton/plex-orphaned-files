@@ -24,7 +24,7 @@ dependencies {
 	implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
 	implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
 
-	def kotlinxSerializationVersion = '1.1.0'
+	def kotlinxSerializationVersion = '1.9.0'
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
 
