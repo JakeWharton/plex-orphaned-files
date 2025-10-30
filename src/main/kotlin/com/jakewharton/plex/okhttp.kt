@@ -1,12 +1,12 @@
 package com.jakewharton.plex
 
+import java.io.IOException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Response
-import java.io.IOException
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 class HttpException(val code: Int, message: String) : RuntimeException("$code $message")
 
@@ -16,7 +16,7 @@ suspend fun Call.awaitString(): String {
 			override fun onResponse(call: Call, response: Response) {
 				response.use {
 					if (response.isSuccessful) {
-						val body = response.body!!.string()
+						val body = response.body.string()
 						continuation.resume(body)
 					} else {
 						continuation.resumeWithException(

@@ -4,11 +4,10 @@ import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Configuration.unix
 import com.google.common.jimfs.Jimfs
 import java.nio.file.FileSystem
-import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
-import kotlin.streams.toList
+import kotlin.io.path.walk
 
 fun fakePlex(
 	configuration: Configuration = unix(),
@@ -37,10 +36,9 @@ private class FakePlexApiManipulator(
 		val section = PlexSection(title, title, sectionManipulator.locations.map { it.toString() })
 		val paths = sectionManipulator.locations
 			.flatMapTo(mutableSetOf<String>()) { location ->
-				Files.walk(location)
+				location.walk()
 					.filter { !it.isDirectory() }
 					.map(Path::toString)
-					.toList()
 			}
 		if (sections.putIfAbsent(section, paths) != null) {
 			throw IllegalArgumentException("Duplicate section: $title")

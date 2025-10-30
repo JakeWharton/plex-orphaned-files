@@ -3,6 +3,8 @@
 package com.jakewharton.plex
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.arguments.multiple
@@ -12,6 +14,9 @@ import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
+import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -19,16 +24,14 @@ import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
 import okhttp3.logging.HttpLoggingInterceptor.Level.BODY
 import okhttp3.logging.HttpLoggingInterceptor.Level.NONE
-import java.nio.file.FileSystem
-import java.nio.file.FileSystems
-import kotlin.system.exitProcess
 
 private class OrphanedFilesCommand(
 	private val fs: FileSystem,
-) : CliktCommand(
-	name = "plex-orphaned-files",
-	help = "Find files in your Plex libraries which are not indexed by Plex.",
-) {
+) : CliktCommand("plex-orphaned-files") {
+	override fun help(context: Context): String {
+		return "Find files in your Plex libraries which are not indexed by Plex."
+	}
+
 	private val baseUrl by option(metavar = "URL")
 		.help("Base URL of Plex server web interface (e.g., http://plex:32400/)")
 		.convert { it.toHttpUrl() }

@@ -1,11 +1,10 @@
 package com.jakewharton.plex
 
 import java.nio.file.FileSystem
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.PathMatcher
 import kotlin.io.path.isDirectory
-import kotlin.streams.toList
+import kotlin.io.path.walk
 
 class OrphanedFiles(
 	private val debug: Boolean = false,
@@ -47,11 +46,10 @@ class OrphanedFiles(
 				.map { it.withFolderMapping() }
 				.map(fileSystem::getPath)
 				.flatMap { path ->
-					Files.walk(path)
+					path.walk()
 						.filter { !it.isDirectory() }
 						.filter { file -> fileExcludes.none { it.matches(file) } }
 						.map(Path::toString)
-						.toList()
 				}
 				.toSet()
 

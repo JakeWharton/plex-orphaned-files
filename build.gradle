@@ -1,11 +1,14 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
 buildscript {
 	repositories {
 		mavenCentral()
 		gradlePluginPortal()
 	}
 	dependencies {
-		classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.31'
-		classpath 'org.jetbrains.kotlin:kotlin-serialization:1.4.31'
+		classpath libs.kotlin.gradlePlugin
+		classpath libs.kotlin.serializationPlugin
 	}
 }
 
@@ -13,24 +16,24 @@ apply plugin: 'org.jetbrains.kotlin.jvm'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 apply plugin: 'application'
-mainClassName = 'com.jakewharton.plex.Main'
+application {
+	mainClass = 'com.jakewharton.plex.Main'
+}
 
 dependencies {
-	implementation 'com.github.ajalt.clikt:clikt:3.0.1'
+	implementation libs.clikt
 
-	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3'
+	implementation libs.kotlinx.coroutines.core
 
-	def okhttpVersion = '4.9.1'
-	implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
-	implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
+	implementation libs.okhttp.core
+	implementation libs.okhttp.logging
 
-	def kotlinxSerializationVersion = '1.1.0'
-	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
-	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+	implementation libs.kotlinx.serialization.core
+	implementation libs.kotlinx.serialization.json
 
-	testImplementation 'junit:junit:4.13.2'
-	testImplementation 'com.google.jimfs:jimfs:1.2'
-	testImplementation 'com.google.truth:truth:1.1.2'
+	testImplementation libs.junit
+	testImplementation libs.jimfs
+	testImplementation libs.truth
 }
 
 repositories {
@@ -41,16 +44,19 @@ tasks.named("distTar").configure { task ->
 	task.enabled = false
 }
 tasks.named("assemble").configure { task ->
-	task.dependsOn(tasks.getByName("installDist"))
+	task.dependsOn(tasks.named("installDist"))
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile).configureEach { task ->
-	task.kotlinOptions {
-		jvmTarget = '1.8'
-		freeCompilerArgs += [
-				'-progressive',
-				'-Xopt-in=kotlin.ExperimentalStdlibApi',
-				'-Xopt-in=kotlin.io.path.ExperimentalPathApi',
-		]
+tasks.withType(JavaCompile).configureEach {
+	sourceCompatibility = '1.8'
+	targetCompatibility = '1.8'
+}
+
+tasks.withType(KotlinJvmCompile).configureEach {
+	compilerOptions {
+		jvmTarget = JvmTarget.JVM_1_8
+		freeCompilerArgs.addAll([
+			'-progressive',
+		])
 	}
 }
