@@ -1,27 +1,35 @@
-FROM adoptopenjdk:8-jdk-hotspot AS build
-ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dkotlin.incremental=false"
+FROM alpine:3.22.2 AS build
+ENV GRADLE_OPTS="-Dkotlin.incremental=false -Dorg.gradle.daemon=false -Dorg.gradle.vfs.watch=false -Dorg.gradle.logging.stacktrace=full"
+
+RUN apk add --no-cache \
+      openjdk21 \
+ && rm -rf /var/cache/* \
+ && mkdir /var/cache/apk
+
 WORKDIR /app
 
+# Get the Gradle wrapper and cache the Gradle distribution first.
 COPY gradlew settings.gradle ./
-COPY gradle ./gradle
+COPY gradle/wrapper ./gradle/wrapper
 RUN ./gradlew --version
 
+COPY gradle/libs.versions.toml ./gradle/libs.versions.toml
 COPY build.gradle ./
-COPY src ./src
-RUN ./gradlew build
+COPY src/main ./src/main
+RUN ./gradlew installDist
 
 
-FROM alpine:3.13
+FROM alpine:3.22.2
 LABEL maintainer="Jake Wharton <docker@jakewharton.com>"
 
 RUN apk add --no-cache \
       curl \
-      openjdk8-jre \
+      tini \
+      openjdk8-jre-base \
  && rm -rf /var/cache/* \
  && mkdir /var/cache/apk
 
 WORKDIR /app
 COPY --from=build /app/build/install/plex-orphaned-files ./
 
-ENTRYPOINT ["/app/bin/plex-orphaned-files"]
-CMD ["--help"]
+ENTRYPOINT ["/sbin/tini", "--", "/app/bin/plex-orphaned-files"]
