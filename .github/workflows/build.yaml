@@ -8,10 +8,10 @@ on:
       - '!trunk'
 
 env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false -Dkotlin.incremental=false"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.vfs.watch=false -Dkotlin.incremental=false -Dorg.gradle.logging.stacktrace=full"
 
 jobs:
-  build:
+  distribution:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,5 +28,26 @@ jobs:
         with:
           name: plex-orphaned-files.zip
           path: build/distributions/plex-orphaned-files.zip
+          if-no-files-found: error
 
-      - run: docker build .
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t plex-orphaned-files .
+      - run: docker run --rm plex-orphaned-files --help
+
+  final-status:
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    needs:
+      - distribution
+      - docker
+    steps:
+      - name: Check
+        run: |
+          results=$(tr -d '\n' <<< '${{ toJSON(needs.*.result) }}')
+          if ! grep -q -v -E '(failure|cancelled)' <<< "$results"; then
+            echo "One or more required jobs failed"
+            exit 1
+          fi
