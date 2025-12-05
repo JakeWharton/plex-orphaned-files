@@ -61,10 +61,10 @@ class HttpPlexApi(
 		val sectionResponse = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), sectionJson)
 
 		return sectionResponse.mediaContainer.metadata
-			.flatMap { paths(it) }
+			.flatMap { mediaPaths(it) + extraPaths(it) }
 	}
 
-	private suspend fun paths(metadata: PlexMetadata): List<String> {
+	private suspend fun mediaPaths(metadata: PlexMetadata): List<String> {
 		if (metadata.media != null) {
 			return metadata.media
 				.flatMap { it.parts }
@@ -81,7 +81,22 @@ class HttpPlexApi(
 		val metadataJson = client.newCall(metadataRequest).awaitString()
 		val metadataList = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), metadataJson)
 
-		return metadataList.mediaContainer.metadata.flatMap { paths(it) }
+		return metadataList.mediaContainer.metadata.flatMap { mediaPaths(it) }
+	}
+
+	private suspend fun extraPaths(metadata: PlexMetadata): List<String> {
+		val metadataUrl = baseUrl.newBuilder(metadata.key)!!
+			.addPathSegment("extras")
+			.addQueryParameter("X-Plex-Token", token)
+			.build()
+		val metadataRequest = Request.Builder()
+			.url(metadataUrl)
+			.header("Accept", "application/json")
+			.build()
+		val metadataJson = client.newCall(metadataRequest).awaitString()
+		val metadataList = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), metadataJson)
+
+		return metadataList.mediaContainer.metadata.flatMap { mediaPaths(it) }
 	}
 }
 
