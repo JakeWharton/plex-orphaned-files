@@ -40,7 +40,7 @@ private class OrphanedFilesCommand(
 		return "Find files in your Plex libraries which are not indexed by Plex."
 	}
 
-	private val host by option(metavar = "URL", envvar = "PLEX_ORPHANED_HOST")
+	private val baseUrl by option(metavar = "URL", envvar = "PLEX_ORPHANED_BASE_URL")
 		.help("Plex server host web interface (e.g., http://plex:32400/)")
 		.convert { it.toHttpUrl() }
 		.required()
@@ -121,7 +121,7 @@ private class OrphanedFilesCommand(
 			.addNetworkInterceptor(httpLogger)
 			.build()
 
-		val plexApi = HttpPlexApi(client, host, token)
+		val plexApi = HttpPlexApi(client, baseUrl, token)
 		val orphanedFiles = OrphanedFiles(
 			plexApi = plexApi,
 			libraries = libraries.toSet(),

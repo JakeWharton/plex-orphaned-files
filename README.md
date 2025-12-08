@@ -79,7 +79,7 @@ services:
     restart: unless-stopped
     environment:
       - "PLEX_ORPHANED_TOKEN=abc123xyz"
-      - "PLEX_ORPHANED_HOST=https://radarr.example.com"
+      - "PLEX_ORPHANED_BASE_URL=http://plexms:32400"
       - "PLEX_ORPHANED_CRON=0 * * * *"
       #Optional:
       - "PLEX_ORPHANED_HC_ID=..."
