@@ -3,7 +3,9 @@ package com.jakewharton.plex
 import java.nio.file.FileSystem
 import java.nio.file.Path
 import java.nio.file.PathMatcher
+import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
+import kotlin.io.path.notExists
 import kotlin.io.path.walk
 
 class OrphanedFiles(
@@ -42,6 +44,16 @@ class OrphanedFiles(
 				println("Checking ${section.title}...")
 			}
 
+			val paths = plexApi.sectionPaths(section.key)
+				.mapTo(LinkedHashSet()) { it.withFolderMapping() }
+
+			for (path in paths) {
+				val realPath = fileSystem.getPath(path)
+				require(realPath.exists()) {
+					"${section.title} path $path not found. Did you mount and map the directories correctly?"
+				}
+			}
+
 			val locations = section.locations
 				.map { it.withFolderMapping() }
 				.map(fileSystem::getPath)
@@ -51,9 +63,6 @@ class OrphanedFiles(
 						.filter { file -> fileExcludes.none { it.matches(file) } }
 						.map(Path::toString)
 				}
-
-			val paths = plexApi.sectionPaths(section.key)
-				.mapTo(LinkedHashSet()) { it.withFolderMapping() }
 
 			for (location in locations) {
 				if (location !in paths) {
