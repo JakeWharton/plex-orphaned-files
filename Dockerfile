@@ -23,9 +23,8 @@ FROM alpine:3.23.0
 LABEL maintainer="Jake Wharton <docker@jakewharton.com>"
 
 RUN apk add --no-cache \
-      curl \
-      tini \
       openjdk8-jre-base \
+      tini \
  && rm -rf /var/cache/* \
  && mkdir /var/cache/apk
 
