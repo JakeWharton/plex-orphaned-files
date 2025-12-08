@@ -51,18 +51,15 @@ class OrphanedFiles(
 						.filter { file -> fileExcludes.none { it.matches(file) } }
 						.map(Path::toString)
 				}
-				.toSet()
 
 			val paths = plexApi.sectionPaths(section.key)
-				.map { it.withFolderMapping() }
+				.mapTo(LinkedHashSet()) { it.withFolderMapping() }
 
-			val orphaned = locations - paths
-			if (debug) {
-				println("Found ${orphaned.size} orphan(s)")
+			for (location in locations) {
+				if (location !in paths) {
+					add(OrphanedFile(section.title, location))
+				}
 			}
-			addAll(orphaned.map {
-				OrphanedFile(section.title, it)
-			})
 		}
 	}
 }
