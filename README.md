@@ -33,16 +33,17 @@ See [command-line usage](#command-line) for how to run the binary.
 
 The binary is available through Docker to simplify use:
 ```
-$ docker run jakewharton/plex-orphaned-files:1
+$ docker run jakewharton/plex-orphaned-files
 ```
 
-(Image also available at `ghcr.io/jakewharton/plex-orphaned-files:1`)
+(Image also available at `ghcr.io/jakewharton/plex-orphaned-files`)
 
-[![Docker Image Version](https://img.shields.io/docker/v/jakewharton/plex-orphaned-files?sort=semver)][hub]
-[![Docker Image Size](https://img.shields.io/docker/image-size/jakewharton/plex-orphaned-files)][layers]
+[![Docker Image Version](https://img.shields.io/docker/v/jakewharton/plex-orphaned-files?sort=semver&style=flat-square)][hub]
+[![Docker Image Size](https://img.shields.io/docker/image-size/jakewharton/plex-orphaned-files?sort=semver&style=flat-square)][hub]<br>
+[![Docker Image Version](https://img.shields.io/docker/v/jakewharton/plex-orphaned-files/trunk?style=flat-square)][hub]
+[![Docker Image Size](https://img.shields.io/docker/image-size/jakewharton/plex-orphaned-files/trunk?style=flat-square)][hub]
 
 [hub]: https://hub.docker.com/r/jakewharton/plex-orphaned-files/
-[layers]: https://microbadger.com/images/jakewharton/plex-orphaned-files
 
 The tool will need to access the filesystem in the same way Plex would. For simplicity, it's easiest
 to mirror the volume mounts of your Plex Docker container. If you are not running Plex in Docker,
@@ -52,7 +53,42 @@ If for whatever reason you cannot mirror the filesystem in the container exactly
 use the `--folder-mapping` argument to change Plex's file paths into paths that can be read inside
 the container.
 
+By default, the tool will run a single check and then exit.
+
+```
+$ docker run -d \
+    jakewharton/plex-orphaned-files \
+      --api-key abc123 \
+      --host https://radarr.example.com \
+```
+
 See [command-line usage](#command-line) for how to run the binary.
+
+If you specify the `--cron` option with a valid cron specifier, the tool will not exit and perform automatic checks in accordance with the schedule.
+For help creating a valid cron specifier, visit [cron.help](https://cron.help/#0_*_*_*_*).
+
+To be notified when sync is failing visit https://healthchecks.io, create a check, and specify the ID to the container using the `--hc-id` option.
+You can also specify a custom host with `--hc-host`.
+
+If you're using Docker Compose, all the options are available as environment variables.
+
+```yaml
+services:
+  gitout:
+    image: jakewharton/plex-orphaned-files:latest
+    restart: unless-stopped
+    environment:
+      - "PLEX_ORPHANED_TOKEN=abc123xyz"
+      - "PLEX_ORPHANED_HOST=https://radarr.example.com"
+      - "PLEX_ORPHANED_CRON=0 * * * *"
+      #Optional:
+      - "PLEX_ORPHANED_HC_ID=..."
+      - "PLEX_ORPHANED_HC_HOST=..."
+```
+
+Note: You may want to specify an explicit version rather than `latest`.
+See https://hub.docker.com/r/jakewharton/plex-orphaned-files/tags or `CHANGELOG.md` for the available versions.
+Use `trunk` for the latest changes.
 
 ### Command-Line
 

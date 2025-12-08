@@ -71,7 +71,11 @@ class HttpPlexApi(
 				.map { it.file }
 		}
 
-		val metadataUrl = baseUrl.newBuilder(metadata.key)!!
+		val metadataUrl = baseUrl.newBuilder()
+			.addPathSegment("library")
+			.addPathSegment("metadata")
+			.addPathSegment(metadata.key)
+			.addPathSegment("allLeaves")
 			.addQueryParameter("X-Plex-Token", token)
 			.build()
 		val metadataRequest = Request.Builder()
@@ -85,18 +89,32 @@ class HttpPlexApi(
 	}
 
 	private suspend fun extraPaths(metadata: PlexMetadata): List<String> {
-		val metadataUrl = baseUrl.newBuilder(metadata.key)!!
+		val extrasUrl = baseUrl.newBuilder()
+			.addPathSegment("library")
+			.addPathSegment("metadata")
+			.addPathSegment(metadata.key)
 			.addPathSegment("extras")
 			.addQueryParameter("X-Plex-Token", token)
 			.build()
-		val metadataRequest = Request.Builder()
-			.url(metadataUrl)
+		val extrasRequest = Request.Builder()
+			.url(extrasUrl)
 			.header("Accept", "application/json")
 			.build()
-		val metadataJson = client.newCall(metadataRequest).awaitString()
-		val metadataList = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), metadataJson)
 
-		return metadataList.mediaContainer.metadata.flatMap { mediaPaths(it) }
+		val extrasCall = client.newCall(extrasRequest)
+
+		// TODO Would be nice to determine ahead of time if we need to make this call or not as opposed to letting it 404.
+		val extrasJson = try {
+			extrasCall.awaitString()
+		} catch (e: HttpException) {
+			if (e.code == 404) {
+				return emptyList()
+			}
+			throw e
+		}
+		val extrasList = json.decodeFromString(PlexResponse.serializer(PlexMetadataList.serializer()), extrasJson)
+
+		return extrasList.mediaContainer.metadata.flatMap { mediaPaths(it) }
 	}
 }
 
@@ -133,6 +151,7 @@ private data class PlexMetadataList(
 
 @Serializable
 private data class PlexMetadata(
+	@SerialName("ratingKey")
 	val key: String,
 	@SerialName("Media")
 	val media: List<PlexMedia>? = null,
