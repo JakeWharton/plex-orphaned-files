@@ -33,7 +33,7 @@ dependencies {
 
 	testImplementation libs.junit
 	testImplementation libs.jimfs
-	testImplementation libs.truth
+	testImplementation libs.assertk
 }
 
 repositories {

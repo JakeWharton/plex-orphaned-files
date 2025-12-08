@@ -1,6 +1,11 @@
 package com.jakewharton.plex
 
-import com.google.common.truth.Truth.assertThat
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.hasMessage
+import assertk.assertions.isEmpty
+import assertk.assertions.isInstanceOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -13,14 +18,16 @@ class OrphanedFilesTest {
 		OrphanedFiles(plexApi = plex, fileSystem = fs, libraries = setOf("Stuff"))
 		OrphanedFiles(plexApi = plex, fileSystem = fs, libraryExcludes = setOf("Things"))
 
-		assertThrows<IllegalArgumentException> {
-			OrphanedFiles(plexApi = plex,
+		assertFailure {
+			OrphanedFiles(
+				plexApi = plex,
 				fileSystem = fs,
 				libraries = setOf("Stuff"),
 				libraryExcludes = setOf("Things"),
 			)
-		}.hasMessageThat()
-			.isEqualTo("Libraries and library excludes are mutually exclusive. Specify neither or one, not both.")
+		}
+			.isInstanceOf<IllegalArgumentException>()
+			.hasMessage("Libraries and library excludes are mutually exclusive. Specify neither or one, not both.")
 	}
 
 	@Test fun emptySection() = runBlocking<Unit> {
@@ -248,5 +255,25 @@ class OrphanedFilesTest {
 		assertThat(orphans).containsExactly(
 			OrphanedFile("Stuff", "/tank/media/Movie_2.mkv")
 		)
+	}
+
+	@Test fun pathMustExist() = runBlocking<Unit> {
+		val plex = fakePlex {
+			section("Stuff") {
+				location("/media") {
+					file("Movie_1.mkv")
+				}
+			}
+		}
+
+		val orphanedFiles = OrphanedFiles(
+			plexApi = plex,
+			fileSystem = fakeFs {},
+			folderMappings = emptyList(),
+		)
+
+		assertFailure { orphanedFiles.find() }
+			.isInstanceOf<IllegalArgumentException>()
+			.hasMessage("Stuff path /media/Movie_1.mkv not found. Did you mount and map the directories correctly?")
 	}
 }
