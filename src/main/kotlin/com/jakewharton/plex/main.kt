@@ -20,6 +20,7 @@ import io.github.kevincianfarini.cardiologist.PulseSchedule
 import io.github.kevincianfarini.cardiologist.schedulePulse
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
+import kotlin.io.path.createParentDirectories
 import kotlin.io.path.writeText
 import kotlin.system.exitProcess
 import kotlin.time.Clock
@@ -104,7 +105,7 @@ private class OrphanedFilesCommand(
 
 	private val output by option("--output", envvar = "PLEX_ORPHANED_OUTPUT")
 		.default("-")
-		.help("Report destination, or '-' to write to stdout (default)")
+		.help("Report destination file, or '-' to write to stdout (default)")
 
 	private val debug by option(hidden = true).counted()
 
@@ -176,7 +177,10 @@ private class OrphanedFilesCommand(
 		if (output == "-") {
 			print(report)
 		} else {
-			fs.getPath(output).writeText(report)
+			fs.getPath(output).apply {
+				createParentDirectories()
+				writeText(report)
+			}
 		}
 
 		startedCheck?.complete()
