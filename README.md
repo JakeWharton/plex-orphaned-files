@@ -56,10 +56,10 @@ the container.
 By default, the tool will run a single check and then exit.
 
 ```
-$ docker run -d \
+$ docker run \
     jakewharton/plex-orphaned-files \
-      --api-key abc123 \
-      --host https://radarr.example.com \
+      --token abc123 \
+      --base-url https://radarr.example.com
 ```
 
 See [command-line usage](#command-line) for how to run the binary.

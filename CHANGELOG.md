@@ -5,6 +5,19 @@
 ### Added
 
 * Linux Arm variant of Docker container.
+* `--output` option to direct report to a file, or use `-` to explicitly target stdout (the default).
+* `--cron` option to continue running and generate a report based on the provided schedule.
+* `--hc-id` and `--hc-host` options for specifying a HealthChecks.io ID and host, respectively, to notify before and after running.
+* Docker container now reads environment variables for specifying option values specifically for use in Docker Compose. The environment variables are: `PLEX_ORPHANED_BASE_URL`, `PLEX_ORPHANED_TOKEN`, `PLEX_ORPHANED_CRON`, `PLEX_ORPHANED_HC_ID`, `PLEX_ORPHANED_HC_HOST`, `PLEX_ORPHANED_OUTPUT`.
+
+### Changed
+
+* File paths from Plex are now checked to exist to ensure the tool has access to the same directories.
+
+### Fixed
+
+* Do not report a movie's extras (like trailers, behind the scenes, etc.) as orphaned.
+* Do not report an artist's non-album songs (from EPs, live albums, etc.) as orphaned.
 
 
 ## [1.1.1] - 2021-03-12
